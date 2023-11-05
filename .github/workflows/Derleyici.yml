@@ -1,0 +1,53 @@
+# Bu araç @keyiflerolsun tarafından | @KekikAkademi için yazılmıştır.
+name: Derleyici
+
+concurrency:
+  group: Derleyici
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.jpg"
+      - "**/*.py"
+
+jobs:
+  Derleyici:
+    runs-on: ubuntu-latest
+    steps:
+      - name : Depo Kontrolü
+        uses : actions/checkout@v3
+
+      - name: JDK 17 Ayarla
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          cache: gradle
+          java-version: 17
+
+      - name: Android SDK Ayarla
+        uses: android-actions/setup-android@v2
+
+      - name: "'.keystore' Oluştur"
+        run: |
+          chmod +x keyStore.sh
+          ./keyStore.sh
+
+      - name: Derle
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease androidSourcesJar
+
+      - name: Release Oluştur
+        uses: marvinpinto/action-automatic-releases@v1.2.1
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: latest
+          prerelease: false
+          title: Development Build
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/libs/app-sources.jar
